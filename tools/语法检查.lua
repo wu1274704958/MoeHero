@@ -1,4 +1,4 @@
-local fs = require 'bee.filesystem'
+require 'filesystem'
 
 local function for_directory(path, f)
 	for p in path:list_directory() do

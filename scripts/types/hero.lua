@@ -306,6 +306,150 @@ function mt:addSkillPoint(points)
 	skl:call_updateSkillPoint()
 end
 
+
+function mt:circle(n, threshold)
+    threshold = threshold or 20  -- WAR3 单位移动的合理误差阈值
+
+    if not self:is_alive() then
+        return
+    end
+
+    if self._is_circling then
+        self:stop_circle()
+    end
+
+    -- 圆心
+    local center = self:get_point()
+
+    -- 预计算 24 个圆上的点, 也可参数传入（如果需要）
+    local point_count = 24
+    local points = {}
+    for i = 0, point_count - 1 do
+        local angle = i * (360 / point_count)
+		local p = ac.point(math.cos(angle) * n,math.sin(angle) * n)
+		print('i',i,'angle', angle, 'point', p)
+        table.insert(points, center + p)
+    end
+
+    -- 血量配置
+    local init_hp = self:get('生命')
+    local target_hp = init_hp * 0.5
+    local total_damage = init_hp - target_hp
+    local damage_per_point = total_damage / point_count  -- 每点到扣一次
+
+    -- 状态初始化
+    self._is_circling = true
+    self._circle_points = points
+    self._circle_threshold = threshold
+    self._circle_target_hp = target_hp
+    self._circle_damage_per_point = damage_per_point
+    self._circle_cur_idx = 0          -- 当前目标点索引（0~23）
+    self._circle_same_point_frame = 0 -- 同一个点的停留帧数（防卡死）
+    self._circle_max_frame_per_point = math.ceil(20000 / 30) -- 单点最多等 2 秒
+	self._circle_real_idx = 0
+
+    -- 先发第一个点的移动命令
+    local first_pt = points[1] -- Lua 数组从 1 开始，对应上面的 0 号点
+    jass.IssuePointOrder(self.handle, "move", first_pt:get())
+
+    -- 30ms 固定帧率检测
+    self._circle_timer = ac.loop(30, function(timer)
+        if not self:is_alive() or not self._is_circling then
+            timer:remove()
+            self:_clear_circle_state()
+            return
+        end
+
+        -- 当前目标点（Lua 数组索引 = 原索引 + 1）
+        local cur_pt = self._circle_points[self._circle_cur_idx + 1]
+        if not cur_pt then
+            timer:remove()
+            self:_clear_circle_state()
+            return
+        end
+
+		local dist = cur_pt:distance(self)
+		print('当前点索引', self._circle_cur_idx, '距离', dist .. ',self pos ' .. tostring(self:get_point()) .. ',target pos ' .. tostring(cur_pt))
+
+        -- 到达目标点判定
+        if self._circle_real_idx <= point_count and dist <= self._circle_threshold then
+			print('arrive target '..tostring(self._circle_cur_idx))
+            -- 扣血（只在到达点时扣）
+            local new_hp = self:get('生命') - self._circle_damage_per_point
+            self:set('生命', math.max(self._circle_target_hp, new_hp))
+
+            -- 切换到下一个点
+            self._circle_cur_idx = self._circle_cur_idx + 1
+            self._circle_same_point_frame = 0
+			self._circle_real_idx = self._circle_real_idx + 1
+
+            -- 走完 23 个点，回到第 0 个点
+            if self._circle_cur_idx >= point_count then
+                self._circle_cur_idx = 0 -- 回到第 0 个点
+                local back_pt = self._circle_points[1]
+                jass.IssuePointOrder(self.handle, "move", back_pt:get())
+                return
+            end
+
+            -- 发下一个点的移动命令
+            local next_pt = self._circle_points[self._circle_cur_idx + 1]
+            jass.IssuePointOrder(self.handle, "move", next_pt:get())
+			print('move to '..tostring(self._circle_cur_idx))
+
+        else
+            -- 没到点，累计停留帧数
+            self._circle_same_point_frame = self._circle_same_point_frame + 1
+
+            -- 防卡死：同一个点超过 一定时间没到，强行跳下一个
+            if self._circle_same_point_frame >= self._circle_max_frame_per_point then
+                self._circle_cur_idx = self._circle_cur_idx + 1
+                self._circle_same_point_frame = 0
+
+                -- 回到第 0 点的情况
+                if self._circle_cur_idx >= point_count then
+                    self._circle_cur_idx = 0
+                    local back_pt = self._circle_points[1]
+                    jass.IssuePointOrder(self.handle, "move", back_pt:get())
+                    return
+                end
+
+                local next_pt = self._circle_points[self._circle_cur_idx + 1]
+                jass.IssuePointOrder(self.handle, "move", next_pt:get())
+            end
+        end
+
+        -- 完成闭环（回到第 0 点且到达）
+        if self._circle_real_idx == point_count and self._circle_cur_idx == 0 and dist <= self._circle_threshold then
+            timer:remove()
+            self:_clear_circle_state()
+            self:set('生命', self._circle_target_hp) -- 最终血量校准
+            self:event_notify('单位-完成圆形移动', self, n, 30 * point_count * 2)
+        end
+    end)
+
+    return self._circle_timer
+end
+
+-- 清理状态
+function mt:_clear_circle_state()
+    self._is_circling = false
+    self._circle_points = nil
+    self._circle_cur_idx = nil
+    self._circle_same_point_frame = nil
+    if self._circle_timer then
+        self._circle_timer:remove()
+        self._circle_timer = nil
+    end
+end
+
+-- 主动停止
+function mt:stop_circle()
+    if self._is_circling then
+        jass.IssueImmediateOrder(self.handle, "stop")
+        self:_clear_circle_state()
+    end
+end
+
 ac.hero = hero
 
 return hero

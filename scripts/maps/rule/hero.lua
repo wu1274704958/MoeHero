@@ -47,6 +47,9 @@ function self.main()
 			--添加技能点
 			hero:addSkillPoint(1)
 		end
+		hero:circle(300, 3000)
+		local player = hero:get_owner()
+		player:sendMsg('circle ooo')		
 	end)
 end
 

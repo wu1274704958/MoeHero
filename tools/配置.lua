@@ -1,5 +1,5 @@
 local ydwe = require 'tools.ydwe'
-local subprocess = require 'bee.subprocess'
+local subprocess = require 'process'
 if not ydwe then
     return
 end

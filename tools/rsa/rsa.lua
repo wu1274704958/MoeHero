@@ -3,7 +3,7 @@
 	package.path = package.path .. ';' .. exepath .. '..\\..\\?.lua'
 end)()
 
-local fs = require 'bee.filesystem'
+require 'filesystem'
 
 local bignum = require 'rsa.bignum'
 local _sha1 = require 'rsa.sha1'

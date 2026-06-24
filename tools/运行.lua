@@ -1,7 +1,8 @@
-local fs = require 'bee.filesystem'
-local registry = require 'bee.registry'
+
+require 'filesystem'
+local registry = require 'registry'
 local ydwe = require 'tools.ydwe'
-local subprocess = require 'bee.subprocess'
+local subprocess = require 'process'
 if not ydwe then
     return
 end
@@ -26,8 +27,23 @@ end
 if get_debugger() then
     --command = command .. ' -debugger 4278'
 end
-subprocess.spawn {
-    ydwe / 'ydwe.exe',
-    '-war3',
-    '-loadfile', root / 'MoeHero.w3x',
-}
+
+-- 将路径转换为字符串
+print("ydwe = " .. tostring(ydwe))
+local ydwe_exe = tostring(ydwe / 'YDWE.1.exe')
+print("ydwe_exe = " .. ydwe_exe)
+local map_file = tostring(root / 'MoeHero.w3x')
+-- 使用 os.execute 启动进程
+local cmd = string.format('%s -war3 -loadfile %s', ydwe_exe, map_file)
+
+print("执行命令: " .. cmd)
+
+-- 如果需要后台运行（不阻塞当前脚本）
+-- cmd = cmd .. " &"
+
+-- 执行命令
+local result = os.execute(cmd)
+
+if result ~= true then
+    print("启动失败，错误码:", result)
+end

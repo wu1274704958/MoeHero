@@ -99,6 +99,7 @@ function hot_fix.main(god_p)
 		end
 	end
 	print('hot_fix_ver=' .. hot_fix.my_ver)
+	print('BBBB')
 
 	--将热补丁版本号同步
 	hot_fix.vers = {}
