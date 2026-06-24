@@ -296,6 +296,10 @@ function hero.init()
 	end)
 end
 
+function mt:tty(s)
+	print(s)
+end
+
 --修改英雄技能点数
 function mt:addSkillPoint(points)
 	self.skill_points = self.skill_points + points
