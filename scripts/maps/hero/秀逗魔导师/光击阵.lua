@@ -57,8 +57,8 @@ function mt:on_cast_shot()
 	--延迟0.5秒后生效
 	hero:wait(self.delay, function()
 		--在目标地点创建特效
-		target:add_effect([[Abilities\Spells\Human\FlameStrike\FlameStrike1.mdl]]):remove()
-		target:add_effect([[Abilities\Spells\Human\FlameStrike\FlameStrikeTarget.mdl]]):remove()
+		target:add_effect([[Abilities\Spells\Human\Resurrection\ResurrectTarget.mdl]]):remove()
+		target:add_effect([[Abilities\Spells\Human\Thunderclap\ThunderClapCaster.mdl]]):remove()
 
 		--搜寻区域内的敌方单位
 		for _, u in ac.selector()

@@ -5,16 +5,16 @@ require 'maps.hero.秀逗魔导师.神灭斩'
 
 return ac.hero.create '秀逗魔导师'
 {
-	--物编中的id
-	id = 'H010',
+	--id
+	id = 'H014',
 
-	production = 'Dota 2',
+	production = 'Dota',
 
-	model_source = 'Dota 2',
+	model_source = 'Dota',
 
-	hero_designer = 'IceFrog',
+	hero_designer = 'eqd',
 
-	hero_scripter = 'Copilot',
+	hero_scripter = 'eqd',
 
 	show_animation = { 'spell', 'spell channel' },
 
@@ -59,6 +59,5 @@ return ac.hero.create '秀逗魔导师'
 	--选取半径
 	selected_radius = 32,
 
-	--妹子
 	yuri = true,
 }
